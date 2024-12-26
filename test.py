@@ -1,12 +1,16 @@
+from number.long_int import LongInt
 from number.short_int import ShortInt
 
 a = ShortInt()
+b = LongInt()
 
-a.write_bit(bit_number= 7, bit= True)
+b.signed_value = -32000
 
-print(a.value)
+for _ in range(200):
+    
+    # print(a, a.value, a.signed_value)
+    # a.signed_value -= 1
 
-print(a.get_bit(7))
+    print(b, b.value, b.signed_value, b.high_byte, b.low_byte)
+    b.signed_value -= 1
 
-a.write_bit(bit_number=7, bit=False)
-print(a.get_bit(7))

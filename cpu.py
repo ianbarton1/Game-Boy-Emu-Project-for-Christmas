@@ -5,10 +5,13 @@ from op_code import OpCode
 from op_code_table import OPCodeTable
 
 
+
 class CPU:
+    
 
     def __init__(self, bus:Bus) -> None:
         self.program_counter:int = 0x100
+        self.instruction_count:int = 0
         self.stack_pointer:LongInt = LongInt(value=0x0000)
         self.bus:Bus = bus
         self.op_code:int = 0x00
@@ -16,6 +19,11 @@ class CPU:
         self.last_instruction = OpCode(pnuemonic='???', cycles=4, function=lambda: print('run op'))
         
         self.clock_wait = 0
+
+        self.register_AF = LongInt()
+        self.register_BC = LongInt()
+        self.register_DE = LongInt()
+
 
         self.register_A = ShortInt()
         self.register_B = ShortInt()
@@ -28,13 +36,85 @@ class CPU:
         self.register_HL = LongInt()
         self.register_H = ShortInt()
         self.register_L = ShortInt()
-
-        
-
-
         self.register_S = ShortInt()
         self.register_P = ShortInt()
 
+        self.init_cpu()
+
+
+    def init_cpu(self):
+        '''
+            Set the initial register values based on https://bgb.bircd.org/pandocs.htm#powerupsequence
+
+            AF=$01B0
+            BC=$0013
+            DE=$00D8
+            HL=$014D
+            Stack Pointer=$FFFE
+            [$FF05] = $00   ; TIMA
+            [$FF06] = $00   ; TMA
+            [$FF07] = $00   ; TAC
+            [$FF10] = $80   ; NR10
+            [$FF11] = $BF   ; NR11
+            [$FF12] = $F3   ; NR12
+            [$FF14] = $BF   ; NR14
+            [$FF16] = $3F   ; NR21
+            [$FF17] = $00   ; NR22
+            [$FF19] = $BF   ; NR24
+            [$FF1A] = $7F   ; NR30
+            [$FF1B] = $FF   ; NR31
+            [$FF1C] = $9F   ; NR32
+            [$FF1E] = $BF   ; NR33
+            [$FF20] = $FF   ; NR41
+            [$FF21] = $00   ; NR42
+            [$FF22] = $00   ; NR43
+            [$FF23] = $BF   ; NR30
+            [$FF24] = $77   ; NR50
+            [$FF25] = $F3   ; NR51
+            [$FF26] = $F1-GB, $F0-SGB ; NR52
+            [$FF40] = $91   ; LCDC
+            [$FF42] = $00   ; SCY
+            [$FF43] = $00   ; SCX
+            [$FF45] = $00   ; LYC
+            [$FF47] = $FC   ; BGP
+            [$FF48] = $FF   ; OBP0
+            [$FF49] = $FF   ; OBP1
+            [$FF4A] = $00   ; WY
+            [$FF4B] = $00   ; WX
+            [$FFFF] = $00   ; IE
+        
+        '''
+        self.register_AF.value = 0x01B0
+        self.register_BC.value = 0x0013
+        self.register_DE.value = 0x00D8
+        self.register_HL.value = 0x01FD
+        self.stack_pointer.value = 0xFFFE
+    
+    @property
+    def register_A(self)->ShortInt:
+        return self.register_AF.high_byte
+    
+    @property
+    def register_F(self)->ShortInt:
+        return self.register_AF.low_byte
+    
+    @property
+    def register_B(self)->ShortInt:
+        return self.register_BC.high_byte
+    
+    @property
+    def register_C(self)->ShortInt:
+        return self.register_BC.low_byte
+    
+    @property
+    def register_D(self)->ShortInt:
+        return self.register_DE.high_byte
+    
+    @property
+    def register_E(self)->ShortInt:
+        return self.register_DE.low_byte
+    
+    
     @property
     def register_H(self)->ShortInt:
         return self.register_HL.high_byte
@@ -42,6 +122,35 @@ class CPU:
     @property
     def register_L(self)->ShortInt:
         return self.register_HL.low_byte
+    
+
+
+
+
+
+    @register_A.setter
+    def register_A(self, new_value:int):
+        self.register_AF.high_byte = new_value
+    
+    @register_F.setter
+    def register_F(self, new_value:int):
+        self.register_AF.low_byte = new_value
+    
+    @register_B.setter
+    def register_B(self, new_value:int):
+        self.register_BC.high_byte = new_value
+    
+    @register_C.setter
+    def register_C(self, new_value:int):
+        self.register_BC.low_byte = new_value
+    
+    @register_D.setter
+    def register_D(self, new_value:int):
+        self.register_DE.high_byte = new_value
+    
+    @register_E.setter
+    def register_E(self, new_value:int):
+        self.register_DE.low_byte = new_value
     
     @register_H.setter
     def register_H(self, new_value:int):
@@ -100,7 +209,7 @@ class CPU:
         return self.register_F.write_bit(bit_number=4,bit=flag)
 
     def __repr__(self) -> str:
-        return f"PC: {hex(self.program_counter)}, OP_CODE:{hex(self.op_code)}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},HL:{self.register_HL} Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)}"
+        return f"IC: {self.instruction_count},PC: {hex(self.program_counter)}, OP_CODE:{hex(self.op_code)}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},AF:{self.register_AF},BC:{self.register_BC},DE:{self.register_DE},HL:{self.register_HL} Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)}"
     
     def tick(self):
         if self.clock_wait > 0:
@@ -116,6 +225,6 @@ class CPU:
         print(self)
         self.program_counter += 1
 
-        
+        self.instruction_count += 1
         self.last_instruction.function(self)
         

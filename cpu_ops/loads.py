@@ -26,3 +26,14 @@ def ldd_hl_a(cpu):
     cpu.bus.write(cpu.register_HL.value, cpu.register_A)
 
     cpu.register_HL.value = cpu.register_HL.value - 1
+
+from number.short_int import ShortInt
+
+def ld_A_into_register(cpu, destination_byte:ShortInt, program_count_inc:int=0):
+
+    destination_byte.value = cpu.register_A.value
+
+    cpu.program_counter += 1 + program_count_inc
+
+def ld_val_into_register_a(cpu, source_byte:ShortInt):
+    cpu.register_A.value = source_byte.value

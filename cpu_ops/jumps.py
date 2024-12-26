@@ -17,3 +17,16 @@ def jp_n(cpu):
     cpu.program_counter = full_address.value
 
     # print(f"JP to {cpu.program_counter}")
+
+
+def jr_cc_n(cpu, flag:bool, jumping_condition:bool):
+    cpu.program_counter += 1
+
+    if flag != jumping_condition:
+        return
+    
+    
+
+    offset = cpu.bus.read(cpu.program_counter - 1).signed_value
+    
+    cpu.program_counter += offset    

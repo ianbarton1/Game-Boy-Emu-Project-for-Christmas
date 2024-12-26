@@ -2,6 +2,36 @@ from memory import MemoryBlock
 from number.short_int import ShortInt
 from rom import ROM
 
+def get_immediate_address_value(cpu_obj)->ShortInt:
+    '''
+        This helper function will perform the following actions:
+        
+        1.) Read two bytes from the current program counter
+        2.) increment the program counter by 2
+        3.) Read the byte specified in the address read in the first step
+    
+    '''
+
+    address = LongInt()
+
+    address.low_byte = cpu_obj.bus.read(cpu_obj.program_counter)
+    address.high_byte = cpu_obj.bus.read(cpu_obj.program_counter+ 1)
+
+    cpu_obj.program_counter += 2
+
+    return cpu_obj.bus.read(address.value)
+
+
+def read_byte_at_pc(cpu_obj)->ShortInt:
+    '''
+        Reads a single byte from the bus at the program counter,
+        increment the program counter and returns the byte
+    '''
+
+    value = cpu_obj.bus.read(cpu_obj.program_counter)
+    cpu_obj.program_counter += 1
+
+    return value
 
 class Bus():
     rom:ROM = ROM(rom_file="drmario.gb")

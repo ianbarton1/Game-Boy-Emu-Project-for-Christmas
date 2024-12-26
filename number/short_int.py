@@ -1,9 +1,46 @@
 class ShortInt:
     def __init__(self, value:int = 0) -> None:
-        self.value = value
+        self._value = value
 
     def __repr__(self)->str:
-        return hex(self.value)
+        return hex(self._value)
+    
+    @property
+    def value(self):
+        return self._value
+    
+    @value.setter
+    def value(self, new_value:int):
+        '''
+            Unsigned value setter
+        
+        '''
+
+        if isinstance(new_value, int):
+            if new_value < 0:
+                new_value += 256
+
+            new_value = new_value & 255
+
+        self._value = new_value
+    
+    @property
+    def signed_value(self)->int:
+        if self.get_bit(bit_number=7):
+            return -1 * ((self.value ^ 255) + 1)
+        
+        return self.value
+    
+    @signed_value.setter
+    def signed_value(self, new_value)->None:
+        '''
+            convenience function to save a "signed" value back to to the shortint.
+        '''
+
+        if new_value < 0:
+            self._value = -1 * ((new_value ^ 255) + 1)
+        else:
+            self._value = new_value
     
     def get_bit(self, bit_number:int)->bool:
         '''

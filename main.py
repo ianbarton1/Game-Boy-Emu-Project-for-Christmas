@@ -5,4 +5,3 @@ game_boy:GameBoy = GameBoy()
 
 while True:
     game_boy.tick()
-
