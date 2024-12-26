@@ -1,4 +1,5 @@
 from memory import MemoryBlock
+from number.long_int import LongInt
 from number.short_int import ShortInt
 from rom import ROM
 
@@ -36,6 +37,12 @@ def read_byte_at_pc(cpu_obj)->ShortInt:
 class Bus():
     rom:ROM = ROM(rom_file="drmario.gb")
     ram:MemoryBlock = MemoryBlock()
+    interrupt_enable_register:MemoryBlock = MemoryBlock(size = 1)
+    io_register:MemoryBlock = MemoryBlock(size = 117)
+    high_ram:MemoryBlock = MemoryBlock(size = 127)
+
+    last_read_address:int = 0x0000
+
 
 
     def _resolve_address(self, address:int)->tuple[int, MemoryBlock]:
@@ -59,13 +66,13 @@ class Bus():
             return 0xFEA0, None
         elif address >= 0xFF00 and address <= 0xFF7F:
             print("I/O Register")
-            return 0xFF00, None
+            return 0xFF00, self.io_register
         elif address >= 0xFF80 and address <= 0xFFFE:
             print("High RAM (HRAM)")
-            return 0xFF80, None
+            return 0xFF80, self.high_ram
         elif address == 0xFFFF:
             print("Interrupt enable register (IE)")
-            return 0xFFFF, None
+            return 0xFFFF, self.interrupt_enable_register
 
     def write(self, address:int, value:ShortInt)->None:
         offset, memory_block = self._resolve_address(address)
@@ -75,5 +82,7 @@ class Bus():
 
     def read(self, address:int) -> ShortInt:
         offset, memory_block = self._resolve_address(address)
+
+        self.last_read_address = address
             
         return memory_block.read(address - offset)

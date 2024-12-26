@@ -1,8 +1,12 @@
+
 from bus import Bus
+from enums.ime_transition import IMETransition
 from number.long_int import LongInt
 from number.short_int import ShortInt
 from op_code import OpCode
 from op_code_table import OPCodeTable
+
+
 
 
 
@@ -18,6 +22,9 @@ class CPU:
         self.inst_lookup = OPCodeTable()
         self.last_instruction = OpCode(pnuemonic='???', cycles=4, function=lambda: print('run op'))
         
+        self.ime_flag:bool = False
+        self.ime_transition:IMETransition = IMETransition.IDLE
+
         self.clock_wait = 0
 
         self.register_AF = LongInt()
@@ -209,7 +216,7 @@ class CPU:
         return self.register_F.write_bit(bit_number=4,bit=flag)
 
     def __repr__(self) -> str:
-        return f"IC: {self.instruction_count},PC: {hex(self.program_counter)}, OP_CODE:{hex(self.op_code)}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},AF:{self.register_AF},BC:{self.register_BC},DE:{self.register_DE},HL:{self.register_HL} Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)}"
+        return f"IC: {self.instruction_count},PC: {hex(self.program_counter)}, OP_CODE:{hex(self.op_code)}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},AF:{self.register_AF},BC:{self.register_BC},DE:{self.register_DE},HL:{self.register_HL} Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)},IME:{self.ime_flag}"
     
     def tick(self):
         if self.clock_wait > 0:
@@ -226,5 +233,24 @@ class CPU:
         self.program_counter += 1
 
         self.instruction_count += 1
+
         self.last_instruction.function(self)
+        print(f"LRA ({hex(self.bus.last_read_address)}):{self.bus.read(self.bus.last_read_address)}")
+
+        #handle interrupt enable disable
+        match self.ime_transition:
+            case IMETransition.IDLE:
+                pass
+            case IMETransition.REQUEST_TO_OFF:
+                self.ime_transition = IMETransition.TRANSITIONING_OFF
+            case IMETransition.REQUEST_TO_ON:
+                self.ime_transition = IMETransition.TRANSITIONING_ON
+            case IMETransition.TRANSITIONING_ON:
+                self.ime_transition = IMETransition.IDLE
+                self.ime_flag = True
+            case IMETransition.TRANSITIONING_OFF:
+                self.ime_flag = False
+                self.ime_transition = IMETransition.IDLE
+
+        
         

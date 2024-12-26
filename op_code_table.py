@@ -3,6 +3,7 @@ from time import sleep
 from bus import get_immediate_address_value, read_byte_at_pc
 from cpu_ops.dec import dec_n
 from cpu_ops.exclusive_or import xor_n
+from cpu_ops.interrupts import di
 from cpu_ops.jumps import jp_n, jr_cc_n
 from cpu_ops.loads import ld_A_into_register, ld_n, ld_n_nn, ld_val_into_register_a, ldd_hl_a
 from cpu_ops.no_op import no_op
@@ -105,14 +106,19 @@ class OPCodeTable:
     #Dx
 
     #Ex
+    #TODO: ld_A_into_register shouldn't have this fudge with program counter.
+    _op_code_lookup[0xE0] = OpCode(pnuemonic='LDH (a8),A', cycles=12, function=lambda cpu_obj: ld_A_into_register(cpu_obj, cpu_obj.bus.read(0xFF00 + read_byte_at_pc(cpu_obj).value), -1))
     ##TODO: not test - check on this
-    _op_code_lookup[0xEA] = OpCode(pnuemonic='LD (nn),A', cycles=16, function=lambda cpu_obj: ld_A_into_register(cpu_obj, get_immediate_address_value(cpu_obj)))
+    _op_code_lookup[0xEA] = OpCode(pnuemonic='LD (nn),A', cycles=16, function=lambda cpu_obj: ld_A_into_register(cpu_obj, get_immediate_address_value(cpu_obj), -1))
 
     
 
     #Fx
-    _op_code_lookup[0xFA] = OpCode(pnuemonic='LD A,(nn)', cycles=16, function=lambda cpu_obj: ld_val_into_register_a(cpu_obj, get_immediate_address_value(cpu_obj)))
 
+    _op_code_lookup[0xF0] = OpCode(pnuemonic='LDH A,(a8)', cycles=12, function=lambda cpu_obj: ld_val_into_register_a(cpu_obj, cpu_obj.bus.read(0xFF00 + read_byte_at_pc(cpu_obj).value)))
+    _op_code_lookup[0xFA] = OpCode(pnuemonic='LD A,(nn)', cycles=16, function=lambda cpu_obj: ld_val_into_register_a(cpu_obj, get_immediate_address_value(cpu_obj)))
+    _op_code_lookup[0xF3] = OpCode(pnuemonic='DI', cycles=4, function=lambda cpu_obj: di(cpu_obj))
+    
     print("Op Code Table Implementation %", 100 - (_op_code_lookup.count(unknown_op_code)/ len(_op_code_lookup) * 100))
     sleep(1)
 
