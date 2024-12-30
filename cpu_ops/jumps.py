@@ -1,5 +1,7 @@
 # from cpu import CPU
+import sys
 from number.long_int import LongInt
+from bus import read_byte_at_pc
 
 def jp_n(cpu):
     '''
@@ -20,13 +22,9 @@ def jp_n(cpu):
 
 
 def jr_cc_n(cpu, flag:bool, jumping_condition:bool):
-    cpu.program_counter += 1
+    offset = read_byte_at_pc(cpu).signed_value
 
     if flag != jumping_condition:
         return
     
-    
-
-    offset = cpu.bus.read(cpu.program_counter - 1).signed_value
-    
-    cpu.program_counter += offset    
+    cpu.program_counter += offset

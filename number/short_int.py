@@ -9,6 +9,41 @@ class ShortInt:
     def value(self):
         return self._value
     
+
+    @property
+    def upper_nibble(self)->int:
+        return (self._value & 240) >> 4
+    
+    @property
+    def lower_nibble(self)->int:
+        return self._value & 15
+    
+    @upper_nibble.setter
+    def upper_nibble(self, new_value:int)->None:
+        '''
+            Set a nibble must be between 0-15
+        '''
+
+        new_value = new_value & 15
+        if new_value < 0:
+            raise ValueError('negative nibble not allowed')
+    
+        self._value = (new_value << 4) + self.lower_nibble
+
+    
+    @lower_nibble.setter
+    def lower_nibble(self, new_value:int)->None:
+        '''
+            Set a nibble must be between 0 - 15
+        
+        '''
+
+        new_value = new_value & 15
+        if new_value < 0:
+            raise ValueError('negative nibble not allowed')
+        
+        self._value = (self.upper_nibble << 4) + new_value
+
     @value.setter
     def value(self, new_value:int):
         '''
@@ -88,6 +123,15 @@ class ShortInt:
         mask:int = 255 ^ (1 << bit_number)
 
         self.value &= mask
+
+    def swap_nibbles(self):
+        '''
+            A simple utility to swap nibbles around using the XOR trick
+        '''
+
+        self.upper_nibble = self.lower_nibble ^ self.upper_nibble
+        self.lower_nibble = self.upper_nibble ^ self.lower_nibble
+        self.upper_nibble = self.lower_nibble ^ self.upper_nibble
 
 
 

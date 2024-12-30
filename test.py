@@ -2,10 +2,23 @@ from memory import MemoryBlock
 from number.long_int import LongInt
 from number.short_int import ShortInt
 
-a = 255
-b = 27
+number = ShortInt(0)
 
-print (a | b)
+number.upper_nibble = 0b1111
+number.lower_nibble = 0
 
-print(bin(127))
-print(bin(27))
+def print_number(number):
+    print("---")
+    print(number.value)
+    print("upper",number.upper_nibble)
+    print("lower",number.lower_nibble)
+
+    print(bin(number.value))
+    print("upper", bin(number.upper_nibble))
+    print("lower",bin(number.lower_nibble))
+
+print_number(number)
+
+number.swap_nibbles()
+
+print_number(number)

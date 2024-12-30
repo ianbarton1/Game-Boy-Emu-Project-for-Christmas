@@ -2,9 +2,10 @@
 from time import sleep
 from bus import get_immediate_address_value, read_byte_at_pc, read_byte_from_address_from_register
 
+from cpu_ops.cb_ops.swap_ops import swap
 from cpu_ops.comparisons import cp_n
 from cpu_ops.complement import cpl
-from cpu_ops.control import call_nn, ret, ret_conditional
+from cpu_ops.control import call_nn, restart, ret, ret_conditional
 from cpu_ops.inc_dec import dec_n, dec_nn, inc_n, inc_nn
 from cpu_ops.logical_operators import and_n, or_n, xor_n
 from cpu_ops.interrupts import di, ei
@@ -12,6 +13,7 @@ from cpu_ops.jumps import jp_n, jr_cc_n
 from cpu_ops.loads import ld_A_into_register, ld_n, ld_n_nn, ld_reg2_into_reg1, ld_val_into_register_a, ldd_hl_a, ldi_a_hl, ldi_hl_a
 from cpu_ops.no_op import no_op
 from cpu_ops.not_impl_op import halt_op
+from number.long_int import LongInt
 from op_code import OpCode
 
 
@@ -222,6 +224,7 @@ class OPCodeTable:
     _op_code_lookup[0xC0] = OpCode(pnuemonic='RET NZ', cycles=8, function=lambda cpu_obj: ret_conditional(cpu_obj, cpu_obj.zero_flag, False, 20))
     
     _op_code_lookup[0xC3] = OpCode(pnuemonic='JP n', cycles=16, function=lambda cpu_obj: jp_n(cpu_obj))
+    _op_code_lookup[0xC7] = OpCode(pnuemonic='RST 00H', cycles=32, function=lambda cpu_obj: restart(cpu_obj, LongInt(0x0000)))
     _op_code_lookup[0xC8] = OpCode(pnuemonic='RET Z', cycles=8, function=lambda cpu_obj: ret_conditional(cpu_obj, cpu_obj.zero_flag, True, 20))
     _op_code_lookup[0xC9] = OpCode(pnuemonic='RET', cycles=8, function=lambda cpu_obj: ret(cpu_obj))
     
@@ -229,11 +232,14 @@ class OPCodeTable:
     _op_code_lookup[0xCB] = OpCode(pnuemonic='CB PREFIX INSTRUCTION (DUMMY ENTRY)', cycles=0, function= None)
 
     _op_code_lookup[0xCD] = OpCode(pnuemonic='CALL nn', cycles=12, function=lambda cpu_obj: call_nn(cpu_obj))
+    _op_code_lookup[0xCF] = OpCode(pnuemonic='RST 08H', cycles=32, function=lambda cpu_obj: restart(cpu_obj, LongInt(0x0008)))
 
 
     #Dx
     _op_code_lookup[0xD0] = OpCode(pnuemonic='RET NC', cycles=8, function=lambda cpu_obj: ret_conditional(cpu_obj, cpu_obj.carry_flag, False, 20))
+    _op_code_lookup[0xD7] = OpCode(pnuemonic='RST 10H', cycles=32, function=lambda cpu_obj: restart(cpu_obj, LongInt(0x0010)))
     _op_code_lookup[0xD8] = OpCode(pnuemonic='RET C', cycles=8, function=lambda cpu_obj: ret_conditional(cpu_obj, cpu_obj.carry_flag, True, 20))
+    _op_code_lookup[0xDF] = OpCode(pnuemonic='RST 18H', cycles=32, function=lambda cpu_obj: restart(cpu_obj, LongInt(0x0018)))
 
     #Ex
     #TODO: ld_A_into_register shouldn't have this fudge with program counter.
@@ -242,9 +248,10 @@ class OPCodeTable:
     _op_code_lookup[0xE2] = OpCode(pnuemonic='LD ($FF00+C),A', cycles=8, function=lambda cpu_obj: ld_A_into_register(cpu_obj, cpu_obj.bus.read(0xFF00 + cpu_obj.register_C.value)))
 
     _op_code_lookup[0xE6] = OpCode(pnuemonic='AND #', cycles=8, function=lambda cpu_obj: and_n(cpu_obj, read_byte_at_pc(cpu_obj)))
-
+    _op_code_lookup[0xE7] = OpCode(pnuemonic='RST 20H', cycles=32, function=lambda cpu_obj: restart(cpu_obj, LongInt(0x0020)))
     ##TODO: not test - check on this
     _op_code_lookup[0xEA] = OpCode(pnuemonic='LD (nn),A', cycles=16, function=lambda cpu_obj: ld_A_into_register(cpu_obj, get_immediate_address_value(cpu_obj)))
+    _op_code_lookup[0xEF] = OpCode(pnuemonic='RST 28H', cycles=32, function=lambda cpu_obj: restart(cpu_obj, LongInt(0x0028)))
 
     
 
@@ -252,13 +259,36 @@ class OPCodeTable:
 
     _op_code_lookup[0xF0] = OpCode(pnuemonic='LDH A,(a8)', cycles=12, function=lambda cpu_obj: ld_val_into_register_a(cpu_obj, cpu_obj.bus.read(0xFF00 + read_byte_at_pc(cpu_obj).value)))
     _op_code_lookup[0xF6] = OpCode(pnuemonic='OR #', cycles=8, function=lambda cpu_obj: or_n(cpu_obj, read_byte_at_pc(cpu_obj)))
+
+    _op_code_lookup[0xF7] = OpCode(pnuemonic='RST 30H', cycles=32, function=lambda cpu_obj: restart(cpu_obj, LongInt(0x0030)))
     _op_code_lookup[0xFA] = OpCode(pnuemonic='LD A,(nn)', cycles=16, function=lambda cpu_obj: ld_val_into_register_a(cpu_obj, get_immediate_address_value(cpu_obj)))
     _op_code_lookup[0xF3] = OpCode(pnuemonic='DI', cycles=4, function=lambda cpu_obj: di(cpu_obj))
     _op_code_lookup[0xFB] = OpCode(pnuemonic='EI', cycles=4, function=lambda cpu_obj: ei(cpu_obj))
 
     _op_code_lookup[0xFE] = OpCode(pnuemonic='CP #', cycles=8, function=lambda cpu_obj: cp_n(cpu_obj, read_byte_at_pc(cpu_obj)))
+    _op_code_lookup[0xFF] = OpCode(pnuemonic='RST 38H', cycles=32, function=lambda cpu_obj: restart(cpu_obj, LongInt(0x0038)))
+    
+    #CB code table
 
     
+    _cb_code_lookup[0x30] = OpCode(pnuemonic='CB SWAP B', cycles= 8, function= lambda cpu_obj: swap(cpu_obj, cpu_obj.register_B))
+    _cb_code_lookup[0x31] = OpCode(pnuemonic='CB SWAP C', cycles= 8, function= lambda cpu_obj: swap(cpu_obj, cpu_obj.register_C))
+    _cb_code_lookup[0x32] = OpCode(pnuemonic='CB SWAP D', cycles= 8, function= lambda cpu_obj: swap(cpu_obj, cpu_obj.register_D))
+    _cb_code_lookup[0x33] = OpCode(pnuemonic='CB SWAP E', cycles= 8, function= lambda cpu_obj: swap(cpu_obj, cpu_obj.register_E))
+    _cb_code_lookup[0x34] = OpCode(pnuemonic='CB SWAP H', cycles= 8, function= lambda cpu_obj: swap(cpu_obj, cpu_obj.register_H))
+    _cb_code_lookup[0x35] = OpCode(pnuemonic='CB SWAP L', cycles= 8, function= lambda cpu_obj: swap(cpu_obj, cpu_obj.register_L))
+
+    #FIXME: the timing for this operation is disputed
+    _cb_code_lookup[0x36] = OpCode(pnuemonic='CB SWAP (HL)', cycles= 12, function= lambda cpu_obj: swap(cpu_obj, read_byte_from_address_from_register(cpu_obj, cpu_obj.register_HL)))
+
+    _cb_code_lookup[0x37] = OpCode(pnuemonic='CB SWAP A', cycles= 8, function= lambda cpu_obj: swap(cpu_obj, cpu_obj.register_A))
+
+
+
+
+
+
+
     print("Op Code Table Implementation %", 100 - (_op_code_lookup.count(unknown_op_code)/ len(_op_code_lookup) * 100))
     print("CB Table Implementation %", 100 - (_cb_code_lookup.count(unknown_cb_code)/ len(_cb_code_lookup) * 100))
     sleep(1)
@@ -277,9 +307,6 @@ class OPCodeTable:
             Performs a secondary lookup for any CB prefixed instructions
         
         '''
-
-        op_code:int = read_byte_at_pc(self.parent_cpu).value
-        print(hex(op_code))
 
         op_code:int = read_byte_at_pc(self.parent_cpu).value
         print(hex(op_code))

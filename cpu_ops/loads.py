@@ -1,23 +1,20 @@
-from bus import read_byte_from_address_from_register
+from bus import read_byte_at_pc, read_byte_from_address_from_register
 
 def ld_n_nn(cpu, high_register, low_register):
     '''
         16 bit load immediate value into 16 bit register
     '''
 
-    low_register.value = cpu.bus.read(cpu.program_counter).value
-    high_register.value = cpu.bus.read(cpu.program_counter+1).value
-    
-    cpu.program_counter += 2
+    low_register.value = read_byte_at_pc(cpu).value
+    high_register.value = read_byte_at_pc(cpu).value
+
 
 def ld_n(cpu, register):
     '''
         8 bit load immediate value
     '''
 
-    register.value = cpu.bus.read(cpu.program_counter).value
-
-    cpu.program_counter += 1
+    register.value = read_byte_at_pc(cpu).value
 
 
 def ldd_hl_a(cpu):
