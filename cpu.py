@@ -24,6 +24,7 @@ class CPU:
         self.cb_code:int = 0x00
         self.inst_lookup = OPCodeTable(parent_cpu= self)
         self.last_instruction = OpCode(pnuemonic='???', cycles=4, function=lambda: print('run op'))
+        self.cpu_is_halted:bool = False
 
         self.last_tick_was_active:bool = False
         
@@ -222,6 +223,9 @@ class CPU:
         return f"IC: {self.instruction_count},PC (current): {hex(self.program_counter)}, PC (at last fetch):{hex(self.last_fetch_pc)} OP_CODE:{hex(self.op_code)} {hex(self.cb_code) if self.op_code == 0xCB else ''}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},AF:{self.register_AF},BC:{self.register_BC},DE:{self.register_DE},HL:{self.register_HL},SP:{self.stack_pointer}, Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)},IME:{self.ime_flag},FF24 {self.bus.read(0xFF24)}"
     
     def tick(self):
+        if self.cpu_is_halted:
+            return
+
         if self.clock_wait > 0:
             self.clock_wait -= 1
             self.last_tick_was_active = False

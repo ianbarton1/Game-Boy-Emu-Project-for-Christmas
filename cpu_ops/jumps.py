@@ -1,5 +1,7 @@
 # from cpu import CPU
 import sys
+from time import sleep
+from cpu_ops.control import jump_exec_to
 from number.long_int import LongInt
 from bus import read_byte_at_pc
 
@@ -28,3 +30,9 @@ def jr_cc_n(cpu, flag:bool, jumping_condition:bool):
         return
     
     cpu.program_counter += offset
+
+def jp_hl(cpu_obj):
+    '''
+        Jump execution to address contained in register HL
+    '''
+    jump_exec_to(cpu_obj, cpu_obj.register_HL)

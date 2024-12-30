@@ -5,10 +5,21 @@ from memory import MemoryBlock
 from rom import ROM
 
 
+import sdl2.ext as py_sdl
+import sdl2 as py_sdl_native
+
+py_sdl.init()
+
+display:py_sdl.Window = py_sdl.Window(title="Game Boy Emulator", size=(800,600))
+display.show()
+
+renderer:py_sdl.Renderer =py_sdl.Renderer(display, backend='direct3d')
+
+
 class GameBoy:
     bus:Bus = Bus()
     cpu:CPU = CPU(bus=bus)
-    gpu:GPU = GPU(bus=bus)
+    gpu:GPU = GPU(bus=bus, renderer=renderer)
     
     
 

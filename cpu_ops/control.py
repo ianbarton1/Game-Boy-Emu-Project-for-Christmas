@@ -70,3 +70,15 @@ def restart(cpu_obj, target_address:LongInt):
 
     jump_exec_to(cpu_obj, target_address)
 
+def pop(cpu_obj, target_register:LongInt):
+
+    target_register.low_byte.value = pop_from_stack(cpu_obj).value
+    target_register.high_byte.value = pop_from_stack(cpu_obj).value
+
+def push(cpu_obj, source_register:LongInt):
+
+    push_to_stack(cpu_obj, source_register.high_byte.value)
+    push_to_stack(cpu_obj, source_register.low_byte.value)
+
+def halt(cpu_obj):
+    cpu_obj.cpu_is_halted = True
