@@ -1,16 +1,11 @@
+from memory import MemoryBlock
 from number.long_int import LongInt
 from number.short_int import ShortInt
 
-a = ShortInt()
-b = LongInt()
+a = 255
+b = 27
 
-b.signed_value = -32000
+print (a | b)
 
-for _ in range(200):
-    
-    # print(a, a.value, a.signed_value)
-    # a.signed_value -= 1
-
-    print(b, b.value, b.signed_value, b.high_byte, b.low_byte)
-    b.signed_value -= 1
-
+print(bin(127))
+print(bin(27))

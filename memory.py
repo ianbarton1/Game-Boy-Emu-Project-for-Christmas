@@ -16,8 +16,22 @@ class MemoryBlock:
     def read(self, address:int)->ShortInt:
         return self.data_block[address]
 
-    def write(self, address:int, value:ShortInt)->None:
+    def write(self, address:int, value:int)->None:
         if self._read_only:
             return
         #TODO: protect the value from illegal writes
+
+        if not isinstance(value, int):
+            raise TypeError('write expected int for value argument, init_shortint')
+
         self.data_block[address].value = value
+
+    def init_shortint(self, address:int, value:ShortInt):
+        if self._read_only:
+            return
+        #TODO: protect the value from illegal writes
+
+        if not isinstance(value, ShortInt):
+            raise TypeError('write expected Shortint for value argument, init_shortint')
+
+        self.data_block[address] = value

@@ -16,12 +16,18 @@ class ShortInt:
         
         '''
 
-        if isinstance(new_value, int):
-            if new_value < 0:
-                new_value += 256
+        if not isinstance(new_value, int):
+            raise TypeError('value for shortint of invalid type, expected int')
 
-            new_value = new_value & 255
 
+        if new_value < 0:
+            new_value += 256
+
+        if new_value > 255:
+            new_value -= 256
+
+        new_value = new_value & 255
+        
         self._value = new_value
     
     @property

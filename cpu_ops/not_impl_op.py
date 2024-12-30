@@ -2,6 +2,7 @@
 
 
 import sys
+from time import perf_counter
 
 
 def halt_op(cpu):
@@ -11,5 +12,7 @@ def halt_op(cpu):
     
     '''
 
-    print(f"An unimplemented instruction has been encountered at {hex(cpu.program_counter - 1)}, the opcode encountered was {hex(cpu.op_code)}")
+    print(f"An unimplemented instruction has been encountered at {hex(cpu.program_counter)} , the opcode encountered was {hex(cpu.op_code)} {hex(cpu.cb_code) if cpu.op_code == 0xCB else ''}")
+    print(cpu)
+    print(perf_counter())
     sys.exit()

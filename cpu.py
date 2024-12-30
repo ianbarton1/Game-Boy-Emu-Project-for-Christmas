@@ -1,5 +1,6 @@
 
-from bus import Bus
+from time import sleep
+from bus import Bus, read_byte_at_pc
 from enums.ime_transition import IMETransition
 from number.long_int import LongInt
 from number.short_int import ShortInt
@@ -19,8 +20,11 @@ class CPU:
         self.stack_pointer:LongInt = LongInt(value=0x0000)
         self.bus:Bus = bus
         self.op_code:int = 0x00
-        self.inst_lookup = OPCodeTable()
+        self.cb_code:int = 0x00
+        self.inst_lookup = OPCodeTable(parent_cpu= self)
         self.last_instruction = OpCode(pnuemonic='???', cycles=4, function=lambda: print('run op'))
+
+        self.last_tick_was_active:bool = False
         
         self.ime_flag:bool = False
         self.ime_transition:IMETransition = IMETransition.IDLE
@@ -43,8 +47,6 @@ class CPU:
         self.register_HL = LongInt()
         self.register_H = ShortInt()
         self.register_L = ShortInt()
-        self.register_S = ShortInt()
-        self.register_P = ShortInt()
 
         self.init_cpu()
 
@@ -216,26 +218,32 @@ class CPU:
         return self.register_F.write_bit(bit_number=4,bit=flag)
 
     def __repr__(self) -> str:
-        return f"IC: {self.instruction_count},PC: {hex(self.program_counter)}, OP_CODE:{hex(self.op_code)}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},AF:{self.register_AF},BC:{self.register_BC},DE:{self.register_DE},HL:{self.register_HL} Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)},IME:{self.ime_flag}"
+        return f"IC: {self.instruction_count},PC: {hex(self.program_counter)}, OP_CODE:{hex(self.op_code)} {hex(self.cb_code) if self.op_code == 0xCB else ''}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},AF:{self.register_AF},BC:{self.register_BC},DE:{self.register_DE},HL:{self.register_HL},SP:{self.stack_pointer}, Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)},IME:{self.ime_flag},FF24 {self.bus.read(0xFF24)}"
     
     def tick(self):
         if self.clock_wait > 0:
             self.clock_wait -= 1
-
-        if self.clock_wait > 0:
-            return
+            self.last_tick_was_active = False
+            return            
         
-        self.op_code = self.bus.read(self.program_counter).value
+        self.last_tick_was_active = True
+        
+        # self.op_code = self.bus.read(self.program_counter).value
+        self.op_code = read_byte_at_pc(self).value
+
+        if self.op_code == 0xCB:
+            self.cb_code = self.bus.read(self.program_counter).value
+
         self.last_instruction = self.inst_lookup.decode_instruction(self.op_code)
         self.clock_wait = self.last_instruction.cycles
 
-        print(self)
-        self.program_counter += 1
+        
+        # self.program_counter += 1
 
         self.instruction_count += 1
 
         self.last_instruction.function(self)
-        print(f"LRA ({hex(self.bus.last_read_address)}):{self.bus.read(self.bus.last_read_address)}")
+        # print(f"LRA ({hex(self.bus.last_read_address)}):{self.bus.read(self.bus.last_read_address)}")
 
         #handle interrupt enable disable
         match self.ime_transition:

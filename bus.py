@@ -1,3 +1,4 @@
+from time import sleep
 from memory import MemoryBlock
 from number.long_int import LongInt
 from number.short_int import ShortInt
@@ -23,6 +24,10 @@ def get_immediate_address_value(cpu_obj)->ShortInt:
     return cpu_obj.bus.read(address.value)
 
 
+def read_byte_from_address_from_register(cpu_obj, long_register:LongInt)->ShortInt:
+    return cpu_obj.bus.read(long_register.value)
+
+
 def read_byte_at_pc(cpu_obj)->ShortInt:
     '''
         Reads a single byte from the bus at the program counter,
@@ -38,8 +43,13 @@ class Bus():
     rom:ROM = ROM(rom_file="drmario.gb")
     ram:MemoryBlock = MemoryBlock()
     interrupt_enable_register:MemoryBlock = MemoryBlock(size = 1)
-    io_register:MemoryBlock = MemoryBlock(size = 117)
+    io_register:MemoryBlock = MemoryBlock(size = 128)
     high_ram:MemoryBlock = MemoryBlock(size = 127)
+
+    vram:MemoryBlock = MemoryBlock(size = 24577)
+
+    ro_block:MemoryBlock = MemoryBlock(size = 96, read_only=True)
+    oam_memory:MemoryBlock = MemoryBlock(size = 100000)
 
     last_read_address:int = 0x0000
 
@@ -49,35 +59,43 @@ class Bus():
         if address >= 0x0 and address <= 0x7FFF:
             return 0x0000, self.rom
         elif address >= 0x4000 and address <= 0x9fff:
-            print("read vram")
-            return 0x4000, None
+            # print("read/write vram")
+            return 0x4000, self.vram
         elif address >= 0xA000 and address <= 0xBFFF:
-            print("read external ram")
+            # print("read external ram")
             return 0xA000, None
         elif address >= 0xC000 and address <= 0xDFFF:
             return 0xC000, self.ram
         elif address >= 0xE000 and address <= 0xFDFF:
             return 0xE000, self.ram
         elif address >= 0xFE00 and address <= 0xFE9F:
-            print("OAM not implemented")
-            return 0xFE00, None
+            return 0xFE00, self.oam_memory
         elif address >= 0xFEA0 and address <= 0xFEFF:
-            print("Not usable")
-            return 0xFEA0, None
+            # print("Not usable")
+            return 0xFEA0, self.ro_block
         elif address >= 0xFF00 and address <= 0xFF7F:
-            print("I/O Register")
+            # print("I/O Register")
             return 0xFF00, self.io_register
         elif address >= 0xFF80 and address <= 0xFFFE:
-            print("High RAM (HRAM)")
+            # print("High RAM (HRAM)")
             return 0xFF80, self.high_ram
         elif address == 0xFFFF:
-            print("Interrupt enable register (IE)")
+            # print("Interrupt enable register (IE)")
             return 0xFFFF, self.interrupt_enable_register
 
-    def write(self, address:int, value:ShortInt)->None:
+    def write(self, address:int, value:int)->None:
         offset, memory_block = self._resolve_address(address)
-        print(hex(address), hex(offset))
+
+        if not isinstance(value, int):
+            raise TypeError('write function expected int, use init')
         memory_block.write(address - offset, value)
+
+    def init_shortint(self, address:int, value:ShortInt):
+        offset, memory_block = self._resolve_address(address)
+
+        if not isinstance(value, ShortInt):
+            raise TypeError('write function expected int, use init')
+        memory_block.init_shortint(address - offset, value)
 
 
     def read(self, address:int) -> ShortInt:
