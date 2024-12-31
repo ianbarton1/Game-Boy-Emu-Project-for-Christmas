@@ -23,6 +23,10 @@ class GPU:
 
     draw_counter:int = 0
     draw_frequency:int = 30
+
+    py_sdl_native.SDL_Texture()
+
+    tile_textures:list[py_sdl_native.SDL_Texture] = [py_sdl_native.SDL_CreateTexture() for _ in range(400)]
     
     
 
@@ -73,13 +77,15 @@ class GPU:
                         
                         self.draw_counter += 1
 
-                        coloured_rectangles = [[],[],[],[]]
-                        colour_pallette = [
-                                            py_sdl_native.SDL_Colour(255,255,255,0),
-                                            py_sdl_native.SDL_Colour(170,170,170,0),
-                                            py_sdl_native.SDL_Colour(85,85,85,0),
-                                            py_sdl_native.SDL_Colour(0,0,0,0)
-                                        ]
+                        rectangles = []
+
+                        # coloured_rectangles = [[],[],[],[]]
+                        # colour_pallette = [
+                        #                     py_sdl_native.SDL_Colour(255,255,255,0),
+                        #                     py_sdl_native.SDL_Colour(170,170,170,0),
+                        #                     py_sdl_native.SDL_Colour(85,85,85,0),
+                        #                     py_sdl_native.SDL_Colour(0,0,0,0)
+                        #                 ]
 
                         if self.draw_counter >= self.draw_frequency:
 
@@ -91,9 +97,9 @@ class GPU:
                             start_time = perf_counter()
                             address_reads = 0
 
-                            
-
                             for tile_id in range(384):
+
+                                rectangles.append(py_sdl_native.SDL_Rect(400 + (tile_id % 16) * 16, 100 + line_idx * 2 + ((tile_id // 16) * 16), 16, 16))
                                 for line_idx in range(8):
 
                                     address = 0x8000 + (tile_id * 16) + (line_idx * 2)
@@ -102,15 +108,17 @@ class GPU:
                                     address_reads += 2
                                     
 
-                                    for pixel_idx in range(8):
-                                        colour_index = (byte_2.get_bit(7 - pixel_idx) << 1) + byte_1.get_bit(7 - pixel_idx)
-                                        # self.renderer.fill((400 + (tile_id % 16) * 16 + pixel_idx * 2, 100 + line_idx * 2 + ((tile_id // 16) * 16), 2, 2), py_sdl.Color(colour_value,colour_value,colour_value,0))
-                                        coloured_rectangles[colour_index].append(py_sdl_native.SDL_Rect(400 + (tile_id % 16) * 16 + pixel_idx * 2, 100 + line_idx * 2 + ((tile_id // 16) * 16), 2, 2))
+                                    # for pixel_idx in range(8):
+                                    #     colour_index = (byte_2.get_bit(7 - pixel_idx) << 1) + byte_1.get_bit(7 - pixel_idx)
+                                    #     # self.renderer.fill((400 + (tile_id % 16) * 16 + pixel_idx * 2, 100 + line_idx * 2 + ((tile_id // 16) * 16), 2, 2), py_sdl.Color(colour_value,colour_value,colour_value,0))
+                                    #     coloured_rectangles[colour_index].append(py_sdl_native.SDL_Rect(400 + (tile_id % 16) * 16 + pixel_idx * 2, 100 + line_idx * 2 + ((tile_id // 16) * 16), 2, 2))
 
 
-                            for colour_index in range(4):
-                                if len(coloured_rectangles[colour_index]) > 0:
-                                    self.renderer.draw_rect(coloured_rectangles[colour_index], colour_pallette[colour_index])
+                            # for colour_index in range(4):
+                            #     if len(coloured_rectangles[colour_index]) > 0:
+                            #         self.renderer.draw_rect(coloured_rectangles[colour_index], colour_pallette[colour_index])
+
+
 
                             end_time = perf_counter()
 
