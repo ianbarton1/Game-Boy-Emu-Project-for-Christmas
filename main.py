@@ -23,7 +23,7 @@ while running:
     #         break
     #     if e.type == py_sdl_native.SDL_KEYDOWN:
     #         if e.key.keysym.sym == py_sdl_native.SDLK_ESCAPE:
-    #             running = False
+    #             running = False   
     #             break
     
     

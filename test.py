@@ -1,3 +1,4 @@
+import ctypes
 from memory import MemoryBlock
 from number.long_int import LongInt
 from number.short_int import ShortInt
@@ -22,3 +23,9 @@ print_number(number)
 number.swap_nibbles()
 
 print_number(number)
+
+
+pixels = (ctypes.c_ubyte * (16*16 * 3))()
+
+
+print(len(pixels))
