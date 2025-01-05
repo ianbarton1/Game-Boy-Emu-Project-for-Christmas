@@ -221,7 +221,7 @@ class OPCodeTable:
     _op_code_lookup[0x93] = OpCode(pnuemonic="SUB E", cycles=4, function= lambda cpu_obj: sub_n(cpu_obj, cpu_obj.register_E))
     _op_code_lookup[0x94] = OpCode(pnuemonic="SUB H", cycles=4, function= lambda cpu_obj: sub_n(cpu_obj, cpu_obj.register_H))
     _op_code_lookup[0x95] = OpCode(pnuemonic="SUB L", cycles=4, function= lambda cpu_obj: sub_n(cpu_obj, cpu_obj.register_L))
-    _op_code_lookup[0x96] = OpCode(pnuemonic="SUB (HL)", cycles=8, function= lambda cpu_obj: sub_n(cpu_obj, read_byte_from_address_from_register(cpu_obj.register_HL)))
+    _op_code_lookup[0x96] = OpCode(pnuemonic="SUB (HL)", cycles=8, function= lambda cpu_obj: sub_n(cpu_obj, read_byte_from_address_from_register(cpu_obj,cpu_obj.register_HL)))
     _op_code_lookup[0x97] = OpCode(pnuemonic="SUB A", cycles=4, function= lambda cpu_obj: sub_n(cpu_obj, cpu_obj.register_A))
 
     #Ax
@@ -455,7 +455,7 @@ class OPCodeTable:
     _cb_code_lookup[0x83] = OpCode(pnuemonic='RES 0,E', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_E, 0))
     _cb_code_lookup[0x84] = OpCode(pnuemonic='RES 0,H', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_H, 0))
     _cb_code_lookup[0x85] = OpCode(pnuemonic='RES 0,L', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_L, 0))
-    _cb_code_lookup[0x86] = OpCode(pnuemonic='RES 0,(HL)', cycles= 16, function= lambda cpu_obj: res_b_r(cpu_obj, read_byte_from_address_from_register(cpu_obj.register_HL), 0))
+    _cb_code_lookup[0x86] = OpCode(pnuemonic='RES 0,(HL)', cycles= 16, function= lambda cpu_obj: res_b_r(cpu_obj, read_byte_from_address_from_register(cpu_obj,cpu_obj.register_HL), 0))
     _cb_code_lookup[0x87] = OpCode(pnuemonic='RES 0,A', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_A, 0))
 
     _cb_code_lookup[0x88] = OpCode(pnuemonic='RES 1,B', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_B, 1))
@@ -513,7 +513,7 @@ class OPCodeTable:
     _cb_code_lookup[0xB3] = OpCode(pnuemonic='RES 6,E', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_E, 6))
     _cb_code_lookup[0xB4] = OpCode(pnuemonic='RES 6,H', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_H, 6))
     _cb_code_lookup[0xB5] = OpCode(pnuemonic='RES 6,L', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_L, 6))
-    _cb_code_lookup[0xB6] = OpCode(pnuemonic='RES 6,(HL)', cycles= 16, function= lambda cpu_obj: res_b_r(cpu_obj, read_byte_from_address_from_register(cpu_obj.register_HL), 6))
+    _cb_code_lookup[0xB6] = OpCode(pnuemonic='RES 6,(HL)', cycles= 16, function= lambda cpu_obj: res_b_r(cpu_obj, read_byte_from_address_from_register(cpu_obj,cpu_obj.register_HL), 6))
     _cb_code_lookup[0xB7] = OpCode(pnuemonic='RES 6,A', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_A, 6))
 
     _cb_code_lookup[0xB8] = OpCode(pnuemonic='RES 7,B', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_B, 7))
@@ -522,7 +522,7 @@ class OPCodeTable:
     _cb_code_lookup[0xBB] = OpCode(pnuemonic='RES 7,E', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_E, 7))
     _cb_code_lookup[0xBC] = OpCode(pnuemonic='RES 7,H', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_H, 7))
     _cb_code_lookup[0xBD] = OpCode(pnuemonic='RES 7,L', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_L, 7))
-    _cb_code_lookup[0xBE] = OpCode(pnuemonic='RES 7,(HL)', cycles= 16, function= lambda cpu_obj: res_b_r(cpu_obj, read_byte_from_address_from_register(cpu_obj.register_HL), 7))
+    _cb_code_lookup[0xBE] = OpCode(pnuemonic='RES 7,(HL)', cycles= 16, function= lambda cpu_obj: res_b_r(cpu_obj, read_byte_from_address_from_register(cpu_obj,cpu_obj.register_HL), 7))
     _cb_code_lookup[0xBF] = OpCode(pnuemonic='RES 7,A', cycles= 8, function= lambda cpu_obj: res_b_r(cpu_obj, cpu_obj.register_A, 7))
 
     #Cx
