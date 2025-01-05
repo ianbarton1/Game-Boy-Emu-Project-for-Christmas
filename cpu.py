@@ -1,11 +1,14 @@
 
+import sys
 from time import sleep
 from bus import Bus, read_byte_at_pc
+from cpu_ops.control import push_current_pc_to_stack
 from enums.ime_transition import IMETransition
 from number.long_int import LongInt
 from number.short_int import ShortInt
 from op_code import OpCode
 from op_code_table import OPCodeTable
+from stack import push_to_stack
 
 
 
@@ -25,6 +28,7 @@ class CPU:
         self.inst_lookup = OPCodeTable(parent_cpu= self)
         self.last_instruction = OpCode(pnuemonic='???', cycles=4, function=lambda: print('run op'))
         self.cpu_is_halted:bool = False
+        self.cpu_is_stopped:bool = False
 
         self.last_tick_was_active:bool = False
         
@@ -49,6 +53,11 @@ class CPU:
         self.register_HL = LongInt()
         self.register_H = ShortInt()
         self.register_L = ShortInt()
+
+        #ppu registers
+        self.register_LCDC = self.bus.read(0xFF40)
+
+        
 
         self.init_cpu()
 
@@ -100,6 +109,15 @@ class CPU:
         self.register_DE.value = 0x00D8
         self.register_HL.value = 0x01FD
         self.stack_pointer.value = 0xFFFE
+
+        self.register_LCDC.value = 0x91
+
+        self.interrupt_enable = self.bus.read(0xFFFF)
+        self.interrupt_flag = self.bus.read(0xFF0F)
+
+        self.dma_register = self.bus.read(0xFF46)
+        self.dma_register.add_write_viewer(self.start_dma_transfer)
+       
     
     @property
     def register_A(self)->ShortInt:
@@ -133,6 +151,14 @@ class CPU:
     @property
     def register_L(self)->ShortInt:
         return self.register_HL.low_byte
+    
+    @property
+    def register_SP(self)->LongInt:
+        return self.stack_pointer
+    
+    @register_SP.setter
+    def register_SP(self):
+        raise NotImplementedError("Not allowed to set register_SP directly.")
     
 
 
@@ -220,17 +246,24 @@ class CPU:
         return self.register_F.write_bit(bit_number=4,bit=flag)
 
     def __repr__(self) -> str:
-        return f"IC: {self.instruction_count},PC (current): {hex(self.program_counter)}, PC (at last fetch):{hex(self.last_fetch_pc)} OP_CODE:{hex(self.op_code)} {hex(self.cb_code) if self.op_code == 0xCB else ''}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},AF:{self.register_AF},BC:{self.register_BC},DE:{self.register_DE},HL:{self.register_HL},SP:{self.stack_pointer}, Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)},IME:{self.ime_flag},FF24 {self.bus.read(0xFF24)}"
+        return f"IC: {self.instruction_count},PC (current): {hex(self.program_counter)}, PC (at last fetch):{hex(self.last_fetch_pc)} OP_CODE:{hex(self.op_code)} {hex(self.cb_code) if self.op_code == 0xCB else ''}, INSTR:{self.last_instruction.pnuemonic}, CLOCKWAIT: {self.clock_wait},IE:{self.interrupt_enable},IF:{self.interrupt_flag}, A:{self.register_A},B:{self.register_B},C:{self.register_C},D:{self.register_D},E:{self.register_E},F:{self.register_F},H:{self.register_H},L:{self.register_L},AF:{self.register_AF},BC:{self.register_BC},DE:{self.register_DE},HL:{self.register_HL},SP:{self.stack_pointer}, Flags:Z:{int(self.zero_flag)},N:{int(self.subtract_flag)},H:{int(self.half_carry_flag)},C:{int(self.carry_flag)},IME:{self.ime_flag},FF24 {self.bus.read(0xFF24)},"
     
-    def tick(self):
-        if self.cpu_is_halted:
-            return
+    def tick(self, tick_amount:int = 1):
+        if self.clock_wait == 0:
+            self.fire_interrupts()
+        
 
         if self.clock_wait > 0:
             self.clock_wait -= 1
             self.last_tick_was_active = False
-            return            
-        
+            return
+
+
+        if self.cpu_is_halted or self.cpu_is_stopped:
+            # print(self)
+            return
+                    
+        # print(self.interrupt_enable,self.interrupt_flag,self.cpu_is_halted,self.ime_flag)
         self.last_tick_was_active = True
         
         self.last_fetch_pc = self.program_counter
@@ -242,7 +275,8 @@ class CPU:
         self.last_instruction = self.inst_lookup.decode_instruction(self.op_code)
         self.clock_wait = self.last_instruction.cycles
 
-        self.instruction_count += 1
+        
+        self.instruction_count += tick_amount
 
         self.last_instruction.function(self)
         # print(f"LRA ({hex(self.bus.last_read_address)}):{self.bus.read(self.bus.last_read_address)}")
@@ -262,5 +296,65 @@ class CPU:
                 self.ime_flag = False
                 self.ime_transition = IMETransition.IDLE
 
+    def fire_interrupts(self):
+        '''
+            Handle any interrupts that may need handling
         
+        '''
         
+        #if ime_flag is disabled we shall not handle any more interrupts
+        if not self.ime_flag:
+            return
+        
+        temp_interrupt = ShortInt(self.interrupt_enable.value & self.interrupt_flag.value)
+        # print("CPU view ", id(self.bus.read(0xFF0F)),id(self.bus.read(0xFFFF)))
+        # print(id(self.interrupt_flag), id(self.interrupt_enable))
+        # print(self.interrupt_enable, self.interrupt_flag, temp_interrupt, temp_interrupt.value)
+        # sleep(1)
+        handler_address = 0x00
+
+        if temp_interrupt.get_bit(bit_number=0) and not self.cpu_is_stopped:
+            # print("V-Blank Interrupt")
+            handler_address = 0x40
+            self.interrupt_flag.write_bit(bit_number=0,bit=False)
+        elif temp_interrupt.get_bit(bit_number=1) and not self.cpu_is_stopped:
+            print("LCD STAT")
+            handler_address = 0x48
+            self.interrupt_flag.write_bit(bit_number=1,bit=False)
+        elif temp_interrupt.get_bit(bit_number=2) and not self.cpu_is_stopped:
+            print("Timer")
+            handler_address = 0x50
+            self.interrupt_flag.write_bit(bit_number=2,bit=False)
+        elif temp_interrupt.get_bit(bit_number=3) and not self.cpu_is_stopped:
+            print("Serial")
+            handler_address = 0x58
+            self.interrupt_flag.write_bit(bit_number=3,bit=False)
+        elif temp_interrupt.get_bit(bit_number=4):
+            print("Joypad")
+            self.interrupt_flag.write_bit(bit_number=4,bit=False)
+            handler_address = 0x60
+        else:
+            return
+
+        self.ime_flag = False
+        
+        push_current_pc_to_stack(self)
+        self.program_counter = handler_address
+        self.clock_wait = 20
+        self.cpu_is_halted = False
+        self.cpu_is_stopped = False
+    
+    def start_dma_transfer(self):
+        # print(self.dma_register)
+        source_address = LongInt()
+        source_address.high_byte = self.dma_register
+
+        
+        destination_address = LongInt(0xFE00)
+
+        # print(source_address, destination_address)
+
+        for offset in range(160):
+            
+            self.bus.write(destination_address.value + offset, self.bus.read(source_address.value + offset).value)
+            # print(hex(source_address.value + offset), hex(destination_address.value + offset), hex(self.bus.read(source_address.value + offset).value),hex(self.bus.read(destination_address.value + offset).value))

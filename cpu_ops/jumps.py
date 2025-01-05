@@ -36,3 +36,29 @@ def jp_hl(cpu_obj):
         Jump execution to address contained in register HL
     '''
     jump_exec_to(cpu_obj, cpu_obj.register_HL)
+
+def jp_nn(cpu_obj, flag:bool, condition:bool):
+    '''
+        two byte immediate jump with condition
+    
+    '''
+    
+    jump_address = LongInt()
+    jump_address.low_byte = read_byte_at_pc(cpu_obj)
+    jump_address.high_byte = read_byte_at_pc(cpu_obj)
+
+    if flag != condition:
+        return
+
+    jump_exec_to(cpu_obj, jump_address)
+
+
+
+def jr_n(cpu_obj):
+    '''
+        relative jump immediate value
+    '''
+
+    address_offset = read_byte_at_pc(cpu_obj).signed_value
+
+    jump_exec_to(cpu_obj, LongInt(cpu_obj.program_counter + address_offset))

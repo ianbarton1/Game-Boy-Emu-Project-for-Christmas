@@ -1,13 +1,69 @@
 class ShortInt:
     def __init__(self, value:int = 0) -> None:
         self._value = value
+        self.write_viewer = None
+        self.read_viewer = None
+        self.write_token = None
+        self.read_token = None
 
     def __repr__(self)->str:
         return hex(self._value)
     
+    def add_write_viewer(self, viewer_fn:callable)->None:
+        self.write_viewer = viewer_fn
+
+    def clear_write_viewer(self)->None:
+        self.write_viewer = None
+
+    def clear_read_viewer(self)->None:
+        self.read_viewer = None
+
+    def add_read_viewer(self, viewer_fn:callable)->None:
+        self.read_viewer = viewer_fn
+
+    def add_write_token(self, write_token:int)->None:
+        if self.write_viewer is not None:
+            self.write_token = write_token
+        
+    def add_read_token(self, read_token:int)->None:
+        if self.read_viewer is not None:
+            self.read_token = read_token
+    
     @property
     def value(self):
+        if self.read_viewer is not None:
+            if self.read_token is None:
+                self.read_viewer()
+            else:
+                self.read_viewer(self.read_token)
+        
+
         return self._value
+    
+    @value.getter
+    def value(self):
+        if self.read_viewer is not None:
+            if self.read_token is None:
+                self.read_viewer()
+            else:
+                self.read_viewer(self.read_token)
+
+        return self._value
+    
+    @property
+    def special_value(self):
+        '''
+            Viewerless property
+        
+        '''
+        return self._value
+    
+    @special_value.setter
+    def special_value(self, new_value:int):
+        '''
+            Sets the value without calling the viewer function
+        '''
+        self._value_setter(new_value=new_value)
     
 
     @property
@@ -51,6 +107,15 @@ class ShortInt:
         
         '''
 
+        self._value_setter(new_value)
+
+        if self.write_viewer is not None:
+            if self.write_token is None:
+                self.write_viewer()
+            else:
+                self.write_viewer(self.write_token)
+
+    def _value_setter(self, new_value):
         if not isinstance(new_value, int):
             raise TypeError('value for shortint of invalid type, expected int')
 
@@ -96,7 +161,7 @@ class ShortInt:
         
         mask:int = 1 << bit_number
         
-        return bool((self.value & mask) >> bit_number)
+        return bool((self.special_value & mask) >> bit_number)
     
 
     def write_bit(self, bit_number:int, bit:bool)->None:
@@ -114,7 +179,7 @@ class ShortInt:
             #set bit
             mask:int = 1 << bit_number
 
-            self.value |= mask
+            self.special_value |= mask
 
             return
         
@@ -122,7 +187,7 @@ class ShortInt:
         
         mask:int = 255 ^ (1 << bit_number)
 
-        self.value &= mask
+        self.special_value &= mask
 
     def swap_nibbles(self):
         '''

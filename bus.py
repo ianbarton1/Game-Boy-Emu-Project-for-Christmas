@@ -40,19 +40,22 @@ def read_byte_at_pc(cpu_obj)->ShortInt:
     return value
 
 class Bus():
-    rom:ROM = ROM(rom_file="drmario.gb")
-    ram:MemoryBlock = MemoryBlock()
-    interrupt_enable_register:MemoryBlock = MemoryBlock(size = 1)
-    io_register:MemoryBlock = MemoryBlock(size = 128)
-    high_ram:MemoryBlock = MemoryBlock(size = 127)
+    
 
-    vram:MemoryBlock = MemoryBlock(size = 24577)
+    def __init__(self, rom:ROM):
+        self.rom:ROM = rom
+        self.ram:MemoryBlock = MemoryBlock()
+        self.interrupt_enable_register:MemoryBlock = MemoryBlock(size = 1)
+        self.io_register:MemoryBlock = MemoryBlock(size = 128)
+        self.high_ram:MemoryBlock = MemoryBlock(size = 127)
+        self.dummy_external_ram:MemoryBlock = MemoryBlock(size= 8192, read_only=True)
 
-    ro_block:MemoryBlock = MemoryBlock(size = 96, read_only=True)
-    oam_memory:MemoryBlock = MemoryBlock(size = 100000)
+        self.vram:MemoryBlock = MemoryBlock(size = 24577)
 
-    last_read_address:int = 0x0000
+        self.ro_block:MemoryBlock = MemoryBlock(size = 96, read_only=True)
+        self.oam_memory:MemoryBlock = MemoryBlock(size = 100000)
 
+        self.last_read_address:int = 0x0000
 
 
     def _resolve_address(self, address:int)->tuple[int, MemoryBlock]:
@@ -63,7 +66,7 @@ class Bus():
             return 0x4000, self.vram
         elif address >= 0xA000 and address <= 0xBFFF:
             # print("read external ram")
-            return 0xA000, None
+            return 0xA000, self.dummy_external_ram
         elif address >= 0xC000 and address <= 0xDFFF:
             return 0xC000, self.ram
         elif address >= 0xE000 and address <= 0xFDFF:

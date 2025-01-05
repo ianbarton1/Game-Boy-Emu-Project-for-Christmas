@@ -2,6 +2,7 @@ import sys
 from time import sleep
 from bus import read_byte_at_pc
 
+from cpu_ops.interrupts import ei
 from number.long_int import LongInt
 from stack import pop_from_stack, push_to_stack
 
@@ -28,6 +29,10 @@ def call_nn(cpu_obj):
     cpu_obj.program_counter = next_jump_address.value
 
 def push_current_pc_to_stack(cpu_obj):
+    '''
+        Push the current program counter to the stack
+    
+    '''
     pc_copy = LongInt(cpu_obj.program_counter)
 
     push_to_stack(cpu_obj, pc_copy.high_byte.value)
@@ -82,3 +87,30 @@ def push(cpu_obj, source_register:LongInt):
 
 def halt(cpu_obj):
     cpu_obj.cpu_is_halted = True
+
+def stop(cpu_obj):
+    cpu_obj.cpu_is_stopped = True
+    cpu_obj.program_counter += 1
+
+def call_cc_nn(cpu_obj, flag:bool, condition:bool):
+    '''
+        two byte immediate call on condition
+    
+    '''
+
+    if flag != condition:
+        return
+    #FIXME: perhaps make this a one and done
+    call_nn(cpu_obj)
+
+def reti(cpu_obj):
+    '''
+        return from sub and enable interrupts
+    '''
+
+    ret(cpu_obj)
+    ei(cpu_obj)
+    
+
+
+    

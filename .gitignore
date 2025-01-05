@@ -1,12 +1,3 @@
-__pycache__/bus.pypy310.pyc
-__pycache__/cpu.pypy310.pyc
-__pycache__/memory.pypy310.pyc
-__pycache__/op_code_table.pypy310.pyc
-cpu_ops/__pycache__/interrupts.pypy310.pyc
-cpu_ops/__pycache__/loads.pypy310.pyc
-__pycache__/bus.pypy310.pyc
-__pycache__/cpu.pypy310.pyc
-__pycache__/memory.pypy310.pyc
-__pycache__/bus.pypy310.pyc
-__pycache__/cpu.pypy310.pyc
-__pycache__/memory.pypy310.pyc
+*.pyc
+*.pyo
+*.gb

@@ -13,5 +13,7 @@ class ROM:
     def read(self,address)->ShortInt:
         return self.memory_block.read(address)
 
-    def write(self, address)->None:
+    def write(self, address:int, value:int)->None:
+        return #Read-only memory there is no writes allowed
+
         self.memory_block.write(address)

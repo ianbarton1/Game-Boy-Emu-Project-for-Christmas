@@ -16,6 +16,22 @@ def add_n(cpu_obj, register:ShortInt):
     cpu_obj.zero_flag = cpu_obj.register_A.value == 0x00
     cpu_obj.subtract_flag = False
 
+def adc_n(cpu_obj, register:ShortInt):
+    '''
+        8-bit add to register A with carry
+    
+    '''
+
+    current_carry:int = 1 if cpu_obj.carry_flag else 0
+
+    cpu_obj.half_carry_flag = (cpu_obj.register_A.lower_nibble + register.lower_nibble + current_carry) > 15
+    cpu_obj.carry_flag = (cpu_obj.register_A.value + register.value + current_carry) > 255
+    
+    cpu_obj.register_A.value += (register.value + current_carry)
+
+    cpu_obj.zero_flag = cpu_obj.register_A.value == 0x00
+    cpu_obj.subtract_flag = False
+
 def add_nn(cpu_obj, long_register:LongInt):
     '''
         16-bit add to register HL

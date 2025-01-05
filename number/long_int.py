@@ -31,6 +31,18 @@ class LongInt:
         self.low_byte.value = (new_value & 255)
 
     @property
+    def special_value(self):
+        return self.value
+
+    @special_value.setter
+    def special_value(self, new_value:int):
+        if new_value < 0:
+            new_value += 65536 
+
+        self.high_byte.special_value = (new_value >> 8) & 255
+        self.low_byte.special_value = (new_value & 255)
+
+    @property
     def signed_value(self):
         if self.high_byte.get_bit(bit_number=7):
             return self._convert_signed_unsigned(self.value)
