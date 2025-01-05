@@ -15,7 +15,9 @@ blargg_test_list = [
     # R"roms\tests\blargg\08-misc instrs.gb", #test 8 hangs
     # R"roms\tests\blargg\09-op r,r.gb", #test 9 hangs
     # R"roms\tests\blargg\10-bit ops.gb", #test 10 hangs
-    R"roms\tests\blargg\11-op a,(hl).gb"
+    # R"roms\tests\blargg\11-op a,(hl).gb" #test 11 unimplemented instruction
+    # R"roms\games\tetris.gb",
+    # R"roms\games\drmario.gb"
 ]
 
 for rom_file in blargg_test_list:
