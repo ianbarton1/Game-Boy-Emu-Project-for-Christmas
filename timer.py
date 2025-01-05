@@ -52,7 +52,7 @@ class Timer:
     def change_state(self):
         self.clock_is_enabled = self.time_control.get_bit(bit_number=2)
 
-        new_clock_rate = self.clock_rates[int(self.time_control.get_bit(bit_number=1)) << 1 + int(self.time_control.get_bit(bit_number=0))]
+        new_clock_rate = self.clock_rates[(int(self.time_control.get_bit(bit_number=1)) << 1) + int(self.time_control.get_bit(bit_number=0))]
         if new_clock_rate != self.selected_clock_rate:
             self.selected_clock_rate = new_clock_rate
             self.clock_tick = 0
