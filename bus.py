@@ -85,6 +85,9 @@ class Bus():
         elif address == 0xFFFF:
             # print("Interrupt enable register (IE)")
             return 0xFFFF, self.interrupt_enable_register
+        if address > 0xFFFF or address < 0x0000:
+            print("Illegal address found :", hex(address))
+            raise ValueError("Address is out of bounds")
 
     def write(self, address:int, value:int)->None:
         offset, memory_block = self._resolve_address(address)
