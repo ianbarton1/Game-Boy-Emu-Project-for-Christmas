@@ -1,3 +1,4 @@
 *.pyc
 *.pyo
 *.gb
+.DS_Store
