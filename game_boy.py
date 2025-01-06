@@ -8,6 +8,7 @@ from joypad import Joypad
 from memory import MemoryBlock
 from rom import ROM
 
+from time import sleep
 
 import sdl2.ext as py_sdl
 import sdl2 as py_sdl_native
@@ -35,7 +36,7 @@ class GameBoy:
         self.display:py_sdl.Window = py_sdl.Window(title=f"Game Boy Emulator {rom_file}", size=(1200,600))
         self.display.show()
 
-        self.renderer:py_sdl.Renderer =py_sdl.Renderer(self.display, backend='direct3d')
+        self.renderer:py_sdl.Renderer =py_sdl.Renderer(self.display, backend='metal')
 
         self.ticks:int = 0
 
@@ -54,6 +55,13 @@ class GameBoy:
         self.this_second_end:float = 0
 
         self.running = True
+
+        self.frame_pacing:float = 1 / 60
+
+        self.this_frame_measurement_start:float = perf_counter()
+        self.this_frame_measurement_end:float = 0
+        self.frames_counted:int = 0
+
 
         
 
@@ -95,17 +103,35 @@ class GameBoy:
             print(self.cpu)
             # print(self.timer.divider_register.high_byte.value)
 
-        if self.gpu.frames_rendered == 60:
+        
+        
+        #speed limiting (where speed is above 100%)
+        if self.gpu.frames_rendered == 1:
             self.gpu.frames_rendered = 0
             self.this_second_end = perf_counter()
-            print(f"60 frames rendered in {self.this_second_end - self.this_second_start}")
-            self.this_second_start = self.this_second_end
 
-        
+            actual_frame_time = self.this_second_end - self.this_second_start
 
+            current_draw_time = perf_counter() - self.this_second_start
+            delay_period = max(0,self.frame_pacing - (current_draw_time))
 
-        #check joypad
-        
-                    
+            while delay_period >= 1/150:
+                current_draw_time = perf_counter() - self.this_second_start
+                delay_period = max(0,self.frame_pacing - (current_draw_time))
+
+                sleep(delay_period)
+
+            frame_draw_time = perf_counter() - self.this_second_start
+
+            # print(f"This frame: {frame_draw_time}, Delay: {delay_period}, Total: {round(frame_draw_time + delay_period,4)}, Actual: {perf_counter() - self.this_second_end}")
+            
+            self.this_second_start = perf_counter()
+            self.frames_counted += 1
+
+        if self.frames_counted == 60:
+            self.frames_counted = 0
+            self.this_frame_measurement_end = perf_counter()
+            print(f"60 frames rendered in {self.this_frame_measurement_end - self.this_frame_measurement_start}")
+            self.this_frame_measurement_start = self.this_frame_measurement_end
         
                     
