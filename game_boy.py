@@ -78,6 +78,7 @@ class GameBoy:
         self.this_second_end:float = 0
 
         self.debug_font = py_sdl.FontTTF('AnonymousPro-Regular.ttf', size=200, color=(255,255,255))
+        self.active_font = py_sdl.FontTTF('AnonymousPro-Regular.ttf', size=200, color=(64,255,64))
 
         self.running = True
 
@@ -91,20 +92,19 @@ class GameBoy:
         self.text_surface = None
         self.draw_debug_info = display_debug              
 
-    def render_label(self, label:str, value)->py_sdl_native.SDL_Texture:
+    def render_label(self, label:str, value, font:py_sdl.FontTTF)->py_sdl_native.SDL_Texture:
         if isinstance(value, bool):
-            temp_surface =self.debug_font.render_text(f"{label}{str(int(value))}")
-            temp_texture = py_sdl_native.SDL_CreateTextureFromSurface(self.renderer.renderer, temp_surface)
+            temp_surface =font.render_text(f"{label}{str(int(value))}")
         elif isinstance(value,LongInt):
-            temp_surface = self.debug_font.render_text(f"{label}{hex(value.value)[2:].rjust(4,'0').upper()}")
-            temp_texture = py_sdl_native.SDL_CreateTextureFromSurface(self.renderer.renderer, temp_surface)
+            temp_surface = font.render_text(f"{label}{hex(value.value)[2:].rjust(4,'0').upper()}")
         elif isinstance(value, ShortInt):
-            temp_surface = self.debug_font.render_text(f"{label}{hex(value.value)[2:].rjust(2,'0').upper()}")
-            temp_texture =  py_sdl_native.SDL_CreateTextureFromSurface(self.renderer.renderer, temp_surface)
+            temp_surface = font.render_text(f"{label}{hex(value.value)[2:].rjust(2,'0').upper()}")
         elif isinstance(value, int):
-            temp_surface = self.debug_font.render_text(f"{label}{str(value).rjust(3,'0').upper()}")
-            temp_texture =  py_sdl_native.SDL_CreateTextureFromSurface(self.renderer.renderer, temp_surface)
-        
+            temp_surface = font.render_text(f"{label}{str(value).rjust(3,'0').upper()}")
+        elif isinstance(value,str):
+            temp_surface = font.render_text(f"{label}{value}")
+            
+        temp_texture =  py_sdl_native.SDL_CreateTextureFromSurface(self.renderer.renderer, temp_surface)
         py_sdl_native.SDL_FreeSurface(temp_surface)
         return temp_texture
                         
@@ -123,26 +123,41 @@ class GameBoy:
 
         # if self.text_surface is None:
 
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 0 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,'AF= ', self.cpu.register_AF)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 1 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"BC= ", self.cpu.register_BC)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 2 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"DE= ", self.cpu.register_DE)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 3 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"HL= ", self.cpu.register_HL)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 4 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"SP= ", self.cpu.register_SP)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 5 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"PC= ", self.cpu.register_PC)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 6 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IME= ", self.cpu.ime_flag)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 7 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IMA= ", True)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 0 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,'AF= ', self.cpu.register_AF, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 1 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"BC= ", self.cpu.register_BC, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 2 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"DE= ", self.cpu.register_DE, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 3 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"HL= ", self.cpu.register_HL, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 4 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"SP= ", self.cpu.register_SP, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 5 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"PC= ", self.cpu.register_PC, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 6 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IME= ", self.cpu.ime_flag, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 7 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IMA= ", True, font=self.debug_font)
 
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 0 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"LCDC= ", self.gpu.lcd_control_register)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 1 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"STAT= ", self.gpu.lcd_status_register)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 2 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"LY= ", self.gpu.register_LY)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 3 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IE= ", self.cpu.interrupt_enable)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 4 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IF= ", self.cpu.interrupt_flag)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 0 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"LCDC= ", self.gpu.lcd_control_register, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 1 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"STAT= ", self.gpu.lcd_status_register, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 2 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"LY= ", self.gpu.register_LY, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 3 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IE= ", self.cpu.interrupt_enable, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 4 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IF= ", self.cpu.interrupt_flag, font=self.debug_font)
 
-        self._draw_variable_on_screen(WINDOW_SIZE_X-60,0,string_size_x=60,string_size_y=40,label="", variable=self.frame_rate)
+        self._draw_variable_on_screen(WINDOW_SIZE_X-60,0,string_size_x=60,string_size_y=40,label="", variable=self.frame_rate, font=self.debug_font)
+
+        active_address = max(self.cpu.last_fetch_pc - 3, -1)
+
+        decoded_instruction_count =  0
+
+        while active_address <= self.cpu.last_fetch_pc + 40 and decoded_instruction_count <= 10:
+            active_address += 1
+            if active_address not in self.cpu.instruction_list:
+                continue
+            
+            self._draw_variable_on_screen(DEBUG_X,DEBUG_Y + STRING_SIZE_Y*(8+ decoded_instruction_count) + PADDING,len(f"{hex(active_address)}  :"+self.cpu.instruction_list[active_address])*25,STRING_SIZE_Y,f"{hex(active_address)}  :", self.cpu.instruction_list[active_address], font=self.debug_font if active_address != self.cpu.last_fetch_pc else self.active_font)
+
+            decoded_instruction_count += 1
+            
+            
 
 
-    def _draw_variable_on_screen(self, x_pos, y_pos, string_size_x, string_size_y,label:str, variable:bool|ShortInt|LongInt):
-        temp_texture:py_sdl_native.SDL_Texture = self.render_label(label, value=variable)
+    def _draw_variable_on_screen(self, x_pos, y_pos, string_size_x, string_size_y,label:str, variable:bool|ShortInt|LongInt, font:py_sdl.FontTTF):
+        temp_texture:py_sdl_native.SDL_Texture = self.render_label(label, value=variable, font=font)
     
         self.renderer.copy(temp_texture.contents,None, py_sdl_native.SDL_Rect(x_pos, y_pos, string_size_x, string_size_y))
 
