@@ -31,19 +31,21 @@ class GPU:
         # print(f"TILE {tile_index} marked as needing update")
         self.tile_needs_update[tile_index] = True
 
-    def __init__(self, bus:Bus, renderer:py_sdl.Renderer):
+    def __init__(self, bus:Bus, renderer:py_sdl.Renderer, debug_print_fn:callable):
         self.last_tick_was_active:bool = True
 
-        TILEMAP_X:int = 600
+        TILEMAP_X:int = 510
         TILEMAP_Y:int = 0
 
         self.register_LY:ShortInt = bus.read(0xFF44)
+        self.register_LYC:ShortInt = bus.read(0xFF45)
         self.lcd_control_register:ShortInt = bus.read(0xFF40)
         self.lcd_status_register:ShortInt = bus.read(0xFF41)
         self.ie_register:ShortInt = bus.read(0xFF0F)
 
         self.renderer = renderer
         self.bus:Bus = bus
+        self.debug_print_fn:callable = debug_print_fn
 
         for address in range(0x8000, 0x9800, 0x1):
             self.bus.read(address).add_write_viewer(self.update_tile_state)
@@ -171,7 +173,7 @@ class GPU:
                         self.draw_background()
                         self.draw_sprites()
                         
-                        
+                        self.debug_print_fn()
                         self.renderer.present() 
                         
 
