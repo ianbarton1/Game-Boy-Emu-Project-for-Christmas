@@ -160,7 +160,9 @@ class CPU:
     def register_SP(self):
         raise NotImplementedError("Not allowed to set register_SP directly.")
     
-
+    @property
+    def register_PC(self)->LongInt:
+        return LongInt(value=self.program_counter)
 
 
 
