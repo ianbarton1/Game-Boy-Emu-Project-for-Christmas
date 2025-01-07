@@ -38,7 +38,8 @@ class PreRenderedFontDefiniton:
     label:str
     value_type:PreRenderedValueType
 
-
+WINDOW_SIZE_X:int = 1400
+WINDOW_SIZE_Y:int = 600
 
 class GameBoy:
     
@@ -53,7 +54,9 @@ class GameBoy:
             Setting this to 0 will mean debug information is printed for every instruction (very slow)
         
         '''
-        self.display:py_sdl.Window = py_sdl.Window(title=f"Game Boy Emulator {rom_file}", size=(1400,600))
+        
+
+        self.display:py_sdl.Window = py_sdl.Window(title=f"Game Boy Emulator {rom_file}", size=(WINDOW_SIZE_X,WINDOW_SIZE_Y))
         self.display.show()
 
         self.renderer:py_sdl.Renderer =py_sdl.Renderer(self.display, backend='opengl')
@@ -83,6 +86,7 @@ class GameBoy:
         self.this_frame_measurement_start:float = perf_counter()
         self.this_frame_measurement_end:float = 0
         self.frames_counted:int = 0
+        self.frame_rate:int = 0
 
         self.text_surface = None
         self.draw_debug_info = display_debug              
@@ -96,6 +100,9 @@ class GameBoy:
             temp_texture = py_sdl_native.SDL_CreateTextureFromSurface(self.renderer.renderer, temp_surface)
         elif isinstance(value, ShortInt):
             temp_surface = self.debug_font.render_text(f"{label}{hex(value.value)[2:].rjust(2,'0').upper()}")
+            temp_texture =  py_sdl_native.SDL_CreateTextureFromSurface(self.renderer.renderer, temp_surface)
+        elif isinstance(value, int):
+            temp_surface = self.debug_font.render_text(f"{label}{str(value).rjust(3,'0').upper()}")
             temp_texture =  py_sdl_native.SDL_CreateTextureFromSurface(self.renderer.renderer, temp_surface)
         
         py_sdl_native.SDL_FreeSurface(temp_surface)
@@ -131,7 +138,7 @@ class GameBoy:
         self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 3 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IE= ", self.cpu.interrupt_enable)
         self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *1 + PADDING * 2, DEBUG_Y + STRING_SIZE_Y * 4 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IF= ", self.cpu.interrupt_flag)
 
-
+        self._draw_variable_on_screen(WINDOW_SIZE_X-60,0,string_size_x=60,string_size_y=40,label="", variable=self.frame_rate)
 
 
     def _draw_variable_on_screen(self, x_pos, y_pos, string_size_x, string_size_y,label:str, variable:bool|ShortInt|LongInt):
@@ -217,7 +224,8 @@ class GameBoy:
         if self.frames_counted == 60:
             self.frames_counted = 0
             self.this_frame_measurement_end = perf_counter()
-            print(f"60 frames rendered in {self.this_frame_measurement_end - self.this_frame_measurement_start}")
+
+            self.frame_rate = round(60 / (self.this_frame_measurement_end - self.this_frame_measurement_start))
             self.this_frame_measurement_start = self.this_frame_measurement_end
             
         
