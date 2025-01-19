@@ -90,7 +90,9 @@ class GameBoy:
         self.frame_rate:int = 0
 
         self.text_surface = None
-        self.draw_debug_info = display_debug              
+        self.draw_debug_info = display_debug
+
+        self.breakpoints:list[int] = [0x100]         
 
     def render_label(self, label:str, value, font:py_sdl.FontTTF)->py_sdl_native.SDL_Texture:
         if isinstance(value, bool):
@@ -208,23 +210,62 @@ class GameBoy:
             print("Stepped to next instruction")
             self.joypad.step_instruction = False
 
-            current_instruction = self.cpu.last_fetch_pc
+            current_instruction_count = self.cpu.instruction_count
             ticks_added = 0
-
-            while self.cpu.last_fetch_pc == current_instruction and not self.cpu.cpu_is_halted and not self.cpu.cpu_is_stopped:
+            self.cpu.last_tick_was_active
+            
+            while self.cpu.instruction_count == current_instruction_count and not self.cpu.cpu_is_halted and not self.cpu.cpu_is_stopped:
                 ticks_added +- 1
                 self.cpu.tick(tick_amount=1)
             
-            self.gpu.frames_rendered = 0
-            while self.gpu.frames_rendered == 0:
-                self.gpu.tick()
-            self.gpu.frames_rendered = 0
+            self.redraw_next_frame()
         
             for _ in range(ticks_added):
 
                 self.timer.tick()
+                    
+        if self.joypad.break_point_entry_requested and self.joypad.debug_pause:
+            print("Set/Unset a breakpoint")
+            entry = None
+            while entry is None:
+                print(f"Breakpoint count: {len(self.breakpoints)}")
             
-            print(hex(current_instruction), hex(self.cpu.last_fetch_pc))
+                print("Enter address to set/unset breakpoint (type 'exit' to finish)")
+                entry = input()
+
+                if entry == 'exit':
+                    continue
+
+                try:
+                    break_point_address = int(entry, base = 16)
+                except:
+                    entry = None
+                
+                if entry is None:
+                    continue
+
+                if break_point_address in self.breakpoints:
+                    self.breakpoints.remove(break_point_address)
+                else:
+                    self.breakpoints.append(break_point_address)
+
+                entry = None
+            
+            self.joypad.break_point_entry_requested = False
+
+                
+
+
+
+        
+        #breakpoint processing
+        if not self.joypad.debug_pause:
+            for breakpoint in self.breakpoints:
+                if breakpoint == self.cpu.last_fetch_pc:
+                    self.joypad.debug_pause = True
+                    self.redraw_next_frame()
+                    break
+
         
         if self.joypad.debug_print:
             print(self.cpu)
@@ -268,6 +309,12 @@ class GameBoy:
 
             self.frame_rate = round(60 / (self.this_frame_measurement_end - self.this_frame_measurement_start))
             self.this_frame_measurement_start = self.this_frame_measurement_end
+
+    def redraw_next_frame(self):
+        self.gpu.frames_rendered = 0
+        while self.gpu.frames_rendered == 0:
+            self.gpu.tick()
+        self.gpu.frames_rendered = 0
             
         
                     
