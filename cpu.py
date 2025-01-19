@@ -1,4 +1,5 @@
 
+from copy import copy
 import sys
 from time import sleep
 from bus import Bus, read_byte_at_pc
@@ -18,7 +19,7 @@ class CPU:
     
 
     def __init__(self, bus:Bus) -> None:
-        self.program_counter:int = 0x100
+        self._program_counter:int = 0x100
         self.last_fetch_pc:int = 0x100
         self.instruction_count:int = 0
         self.stack_pointer:LongInt = LongInt(value=0x0000)
@@ -56,6 +57,9 @@ class CPU:
 
         #ppu registers
         self.register_LCDC = self.bus.read(0xFF40)
+
+
+        self.bytes_buffer:list[int] = []
 
         
 
@@ -104,6 +108,8 @@ class CPU:
             [$FFFF] = $00   ; IE
         
         '''
+        self.program_counter = 0x100
+        self.bytes_buffer = []
         self.register_AF.value = 0x01B0
         self.register_BC.value = 0x0013
         self.register_DE.value = 0x00D8
@@ -118,8 +124,23 @@ class CPU:
         self.dma_register = self.bus.read(0xFF46)
         self.dma_register.add_write_viewer(self.start_dma_transfer)
 
-        self.instruction_list:dict[int,str] = {}
-       
+        self.instruction_list:dict[int,tuple[str,list[int]]] = {}
+    
+    @property
+    def program_counter(self)->int:
+        return self._program_counter
+    
+    @program_counter.setter
+    def program_counter(self, new_val:int)->None:
+        old_val = self._program_counter
+        # print(hex(old_val), hex(new_val), hex(self.bus.read(self._program_counter).value))
+        self.bytes_buffer.append(self.bus.read(self._program_counter).value)
+        self._program_counter = new_val
+        
+        
+        
+        # self.bytes_buffer.append(self.bus.read(self._program_counter).value)
+
     
     @property
     def register_A(self)->ShortInt:
@@ -284,11 +305,22 @@ class CPU:
 
         self.last_instruction.function(self)
 
+        # self.program_counter = self.program_counter
+        # self.bytes_buffer=self.bytes_buffer[:-1]
+
         if self.last_fetch_pc not in self.instruction_list:
-            self.instruction_list[self.last_fetch_pc] = self.last_instruction.pnuemonic
+            self.instruction_list[self.last_fetch_pc] = (self.last_instruction.pnuemonic,copy(self.bytes_buffer))
         else:
-            if self.instruction_list[self.last_fetch_pc] != self.last_instruction.pnuemonic:
-                self.instruction_list[self.last_fetch_pc] = self.last_instruction.pnuemonic
+            if self.instruction_list[self.last_fetch_pc][0] != self.last_instruction.pnuemonic:
+                self.instruction_list[self.last_fetch_pc] = (self.last_instruction.pnuemonic,copy(self.bytes_buffer))
+        
+
+        byte_buffer = ""
+        for byte in self.bytes_buffer:
+            byte_buffer += hex(byte)+" "
+
+        self.bytes_buffer = []
+        # self.program_counter = self.program_counter
 
         # print(f"LRA ({hex(self.bus.last_read_address)}):{self.bus.read(self.bus.last_read_address)}")
 

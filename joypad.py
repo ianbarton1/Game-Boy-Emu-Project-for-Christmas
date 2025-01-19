@@ -13,6 +13,8 @@ class Joypad:
         self.debug_pause:bool = False
         self.debug_print:bool = False
 
+        self.step_instruction:bool = False
+
         self.joypad_register = self.bus.read(0xFF00)
         self.joypad_register.add_read_viewer(self.print_joypad_read)
         self.interrupt_register = self.bus.read(0xFF0F)
@@ -136,6 +138,8 @@ class Joypad:
                             print("Emulation was paused. Press d to print current emulation state")
                         case False:
                             print("Emulation was restarted.")
+                if e.key.keysym.sym == py_sdl_native.SDLK_l:
+                    self.step_instruction = True
 
                 if e.key.keysym.sym == py_sdl_native.SDLK_d and self.debug_pause:
                     self.debug_print = True

@@ -16,15 +16,17 @@ blargg_test_list = [
     # R"roms/tests/blargg/09-op r,r.gb", #test 9 hangs
     # R"roms/tests/blargg/10-bit ops.gb", #test 10 hangs
     # R"roms/tests/blargg/11-op a,(hl).gb" #test 11 unimplemented instruction
-    R"roms/games/tetris.gb",
+    # R"roms/games/tetris.gb",
     R"roms/games/drmario.gb"
 ]
 
 for rom_file in blargg_test_list:
     game_boy:GameBoy = GameBoy(cpu_debug_print_counter= None, rom_file = rom_file, display_debug= True)
     print(perf_counter())
+    game_boy.joypad.debug_pause = True
+    game_boy.play()
 
-game_boy.play()
+
 
 
     

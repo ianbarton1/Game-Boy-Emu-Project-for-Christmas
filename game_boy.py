@@ -77,8 +77,8 @@ class GameBoy:
         self.this_second_start:float = perf_counter()
         self.this_second_end:float = 0
 
-        self.debug_font = py_sdl.FontTTF('AnonymousPro-Regular.ttf', size=200, color=(255,255,255))
-        self.active_font = py_sdl.FontTTF('AnonymousPro-Regular.ttf', size=200, color=(64,255,64))
+        self.debug_font = py_sdl.FontTTF('AnonymousPro-Regular.ttf', size=100, color=(255,255,255))
+        self.active_font = py_sdl.FontTTF('AnonymousPro-Regular.ttf', size=100, color=(64,255,64))
 
         self.running = True
 
@@ -128,7 +128,7 @@ class GameBoy:
         self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 2 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"DE= ", self.cpu.register_DE, font=self.debug_font)
         self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 3 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"HL= ", self.cpu.register_HL, font=self.debug_font)
         self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 4 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"SP= ", self.cpu.register_SP, font=self.debug_font)
-        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 5 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"PC= ", self.cpu.register_PC, font=self.debug_font)
+        self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 5 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"PC= ", LongInt(self.cpu.last_fetch_pc), font=self.debug_font)
         self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 6 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IME= ", self.cpu.ime_flag, font=self.debug_font)
         self._draw_variable_on_screen(DEBUG_X + STRING_SIZE_X *0 + PADDING, DEBUG_Y + STRING_SIZE_Y * 7 + PADDING, STRING_SIZE_X, STRING_SIZE_Y,"IMA= ", True, font=self.debug_font)
 
@@ -140,7 +140,7 @@ class GameBoy:
 
         self._draw_variable_on_screen(WINDOW_SIZE_X-60,0,string_size_x=60,string_size_y=40,label="", variable=self.frame_rate, font=self.debug_font)
 
-        active_address = max(self.cpu.last_fetch_pc - 3, -1)
+        active_address = max(self.cpu.last_fetch_pc - 10, -1)
 
         decoded_instruction_count =  0
 
@@ -149,7 +149,13 @@ class GameBoy:
             if active_address not in self.cpu.instruction_list:
                 continue
             
-            self._draw_variable_on_screen(DEBUG_X,DEBUG_Y + STRING_SIZE_Y*(8+ decoded_instruction_count) + PADDING,len(f"{hex(active_address)}  :"+self.cpu.instruction_list[active_address])*25,STRING_SIZE_Y,f"{hex(active_address)}  :", self.cpu.instruction_list[active_address], font=self.debug_font if active_address != self.cpu.last_fetch_pc else self.active_font)
+            instruction_bytes = ""
+            for byte in self.cpu.instruction_list[active_address][1]:
+                instruction_bytes += hex(byte)[2:].rjust(2,"0").upper()+" "
+
+            instruction_text = f"{hex(active_address)}:{instruction_bytes}:"+self.cpu.instruction_list[active_address][0]
+            
+            self._draw_variable_on_screen(DEBUG_X,DEBUG_Y + STRING_SIZE_Y*(8+ decoded_instruction_count) + PADDING,len(instruction_text)*10,STRING_SIZE_Y,"",instruction_text, font=self.debug_font if active_address != self.cpu.last_fetch_pc else self.active_font)
 
             decoded_instruction_count += 1
             
@@ -172,6 +178,7 @@ class GameBoy:
         
 
     def play(self):
+
         while self.running:
             self.tick()
 
@@ -184,8 +191,6 @@ class GameBoy:
         
     
     def tick(self):
-        
-        
         self.ticks += 1
         UPDATE_RATE = 4
 
@@ -199,6 +204,27 @@ class GameBoy:
             self.gpu.tick(clock_increment=UPDATE_RATE)
             
             self.timer.tick(tick_rate=UPDATE_RATE)
+        elif self.joypad.step_instruction:
+            print("Stepped to next instruction")
+            self.joypad.step_instruction = False
+
+            current_instruction = self.cpu.last_fetch_pc
+            ticks_added = 0
+
+            while self.cpu.last_fetch_pc == current_instruction and not self.cpu.cpu_is_halted and not self.cpu.cpu_is_stopped:
+                ticks_added +- 1
+                self.cpu.tick(tick_amount=1)
+            
+            self.gpu.frames_rendered = 0
+            while self.gpu.frames_rendered == 0:
+                self.gpu.tick()
+            self.gpu.frames_rendered = 0
+        
+            for _ in range(ticks_added):
+
+                self.timer.tick()
+            
+            print(hex(current_instruction), hex(self.cpu.last_fetch_pc))
         
         if self.joypad.debug_print:
             print(self.cpu)

@@ -11,8 +11,8 @@ def jp_n(cpu):
     
     '''
 
-    least_signifant_byte = cpu.bus.read(cpu.program_counter)
-    most_significant_byte = cpu.bus.read(cpu.program_counter + 1)
+    least_signifant_byte = read_byte_at_pc(cpu)
+    most_significant_byte = read_byte_at_pc(cpu)
 
     full_address = LongInt()
     full_address.low_byte = least_signifant_byte
