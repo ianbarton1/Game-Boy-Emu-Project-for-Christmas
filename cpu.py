@@ -289,6 +289,13 @@ class CPU:
             return
                     
         # print(self.interrupt_enable,self.interrupt_flag,self.cpu_is_halted,self.ime_flag)
+
+        #cpu executes the last operation before decoding the new instruction
+        try:
+            self.last_instruction.function(self)
+        except TypeError:
+            pass
+
         self.last_tick_was_active = True
         
         self.last_fetch_pc = self.program_counter
@@ -302,8 +309,9 @@ class CPU:
 
         
         self.instruction_count += tick_amount
-
-        self.last_instruction.function(self)
+        
+        #cpu executes function at decode time
+        # self.last_instruction.function(self)
 
         # self.program_counter = self.program_counter
         # self.bytes_buffer=self.bytes_buffer[:-1]
