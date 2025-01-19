@@ -31,6 +31,7 @@ class Joypad:
 
         self.print_keypresses = show_keypresses
         self.parent_gameboy = parent_gameboy
+        self.break_point_entry_requested = False
 
     def print_joypad_read(self):
         self.update_register()
@@ -138,6 +139,10 @@ class Joypad:
                             print("Emulation was paused. Press d to print current emulation state")
                         case False:
                             print("Emulation was restarted.")
+                        
+                if e.key.keysym.sym == py_sdl_native.SDLK_b:
+                    self.break_point_entry_requested = True
+
                 if e.key.keysym.sym == py_sdl_native.SDLK_l:
                     self.step_instruction = True
 
